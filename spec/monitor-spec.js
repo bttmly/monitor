@@ -9,15 +9,15 @@ describe("monitor()", function(){
   });
 
   it("takes a function as it's argument", function(){
-
     expect(function() {
       monitor( noop );
     }).to.not.throw();
+  });
 
+  it("throws an error when passed a non-function")
     expect( function() {
       monitor( true );
     }).to.throw(TypeError);
-
   });
 
   it("returns a function", function() {
