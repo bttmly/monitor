@@ -1,6 +1,14 @@
 var monitor = (function(){
 
+  var isArray = Array.isArray;
+
+  var slice = Function.prototype.call.bind( [].slice );
+
   // helper functions
+  function isFunction( obj ) {
+    return obj && Object.prototype.toString.call( obj ) === "[object Function]";
+  }
+
   function mixin( target, source ){
     for ( var key in source ) {
       if ( source.hasOwnProperty( key ) ) {
@@ -10,10 +18,6 @@ var monitor = (function(){
     return target;
   }
 
-  function isFunction( obj ) {
-    return obj && Object.prototype.toString.call( obj ) === "[object Function]";
-  }
-
   function pluck( collection, key ) {
     return collection.map(function( obj ){
       return obj[key];
@@ -21,7 +25,7 @@ var monitor = (function(){
   }
 
   function contains( arr, value ) {
-    if ( Array.isArray( value ) ) {
+    if ( isArray( value ) ) {
       return value.every( function( v ){
         return contains( arr, v );
       });
@@ -32,11 +36,11 @@ var monitor = (function(){
 
   function flatten( arr, out ) {
     out = out || [];
-    if ( arr.every( Array.isArray ) ) {
-      [].concat.apply( out, arr );
+    if ( arr.every( isArray ) ) {
+      return [].concat.apply( out, arr );
     } else {
       arr.forEach( function( value ) {
-        if ( Array.isArray( value ) ) {
+        if ( isArray( value ) ) {
           flatten( value, out );
         } else {
           out.push( value );
@@ -46,9 +50,10 @@ var monitor = (function(){
     return out;
   }
 
-  var slice = Function.prototype.call.bind( [].slice );
-
-
+  // this should only be used as a timer, not as a time stamp.
+  function now() {
+    return window.performance.now ? window.performance.now() : Date.now();
+  }
 
   // methods that get mixed into each monitor.
   var methods = {
@@ -61,39 +66,40 @@ var monitor = (function(){
       return contains( pluck( this.calls, "returnValue" ), obj );
     },
     calledWith: function( obj ) {
-        return contains( flatten( pluck( this.calls, "args" ) ), obj ); 
+      return contains( flatten( pluck( this.calls, "args" ) ), obj ); 
+    },
+    calledOn: function( obj ) {
+      return contains( pluck( this.calls, "context" ), obj );
     }
   };
 
   // monitor factory function
-  return function makeMonitor( fn ) {
+  function makeMonitor( fn ) {
 
     var obj, method;
 
-    // handle (object, method) call signature
-    if ( arguments.length > 1 ) {
+    // handle call signatures
+    if ( arguments.length === 0 ) {
+      fn = function () {};
+    } else if ( arguments.length === 1 ) {
+      void 0; // placeholder for now.
+    } else {
       obj = arguments[0];
       method = arguments[1];
-      fn = obj[method];
+      fn = obj[method];      
     }
 
-    // handle () call signature
-    if ( fn == null ){
-      fn = function(){};
-    }
-    
     if ( !isFunction( fn ) ) {
-      throw new TypeError( "Pass a function to monitor()!" );
+      throw new TypeError( "monitor() requires a function or valid method name" );
     }
 
-    //
-    var fnMonitor = function(){
+    var fnMonitor = function() {
       var error, returnValue, time;
 
       try {
-        time = window.performance.now();
+        time = now();
         returnValue = fn.apply( this, arguments );
-        time = window.performance.now() - time;
+        time = now() - time;
       } catch ( e ) {
         error = e;
       }
@@ -125,6 +131,11 @@ var monitor = (function(){
     }
 
     return fnMonitor;
-  };
+  }
+
+  // expose this so users can add methods that will be mixed into monitors.
+  makeMonitor.methods = methods;
+
+  return makeMonitor;
 
 })();
