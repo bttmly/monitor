@@ -26,7 +26,7 @@ var monitor = (function(){
 
   function contains( arr, value ) {
     if ( isArray( value ) ) {
-      return value.every( function( v ){
+      return value.every( function( v ) {
         return contains( arr, v );
       });
     } else {
@@ -62,12 +62,33 @@ var monitor = (function(){
       this.callCount = 0;
       this.calls = [];
     },
+
     returned: function( obj ) {
       return contains( pluck( this.calls, "returnValue" ), obj );
     },
+
     calledWith: function( obj ) {
       return contains( flatten( pluck( this.calls, "args" ) ), obj ); 
     },
+
+    calledWithArgs: function( arr ) {
+      var args = pluck( this.calls, "args" );
+      return args.some( function( argSet ) {
+        return arr.every( function( item ) {
+          return contains( argSet, item );
+        });
+      });
+    },
+
+    calledWithExactArgs: function( arr ) {
+      var args = pluck( this.calls, "args" );
+      return args.some( function( argSet ) {
+        return argSet.length === arr.length && arr.every( function( item, i ) {
+          return argSet[i] === item;
+        });
+      });
+    },
+
     calledOn: function( obj ) {
       return contains( pluck( this.calls, "context" ), obj );
     }

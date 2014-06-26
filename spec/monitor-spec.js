@@ -5,6 +5,8 @@
 
   var err = new Error();
   
+  function noop() {}
+
   function add( a, b ) {
     if ( arguments.length > 2 ) {
       throw err;
@@ -81,18 +83,18 @@
     });
 
     describe( ".calls", function() {
-      it("exists", function() {
+      it( "exists", function() {
         ( addMonitor.calls ).should.be.an( "array" );
       });
     
-      it("stores arguments passed to each call", function() {
+      it( "stores arguments passed to each call", function() {
         addMonitor( 10, 20 );
         ( addMonitor.calls.length ).should.equal( 1 );
         ( addMonitor.calls[0].args[0] ).should.equal( 10 );
         ( addMonitor.calls[0].args[1] ).should.equal( 20 );
       });
 
-      it("stores stringified arguments passed to each call", function() {
+      it( "stores stringified arguments passed to each call", function() {
         addMonitor( 10, 20 );
         ( addMonitor.calls.length ).should.equal( 1 );
         ( addMonitor.calls[0].argsStringified ).should.equal( "[10,20]" );
@@ -141,7 +143,7 @@
         addMonitor = monitor( add );
       });
 
-      it("stores the number of times the function has been called", function() {
+      it( "stores the number of times the function has been called", function() {
         addMonitor( 10, 20 );
         ( addMonitor.callCount ).should.be.a( "number" );
         ( addMonitor.callCount ).should.equal( 1 );
@@ -152,11 +154,47 @@
     });
 
     describe( ".lastReturn", function(){
-      it("stores the return value of the most recent call", function() {
+      it( "stores the return value of the most recent call", function() {
         addMonitor( 10, 20 );
         ( addMonitor.lastReturn ).should.equal( 30 );
         addMonitor( 20, 40 );
         ( addMonitor.lastReturn ).should.equal( 60 );
+      });
+    });
+
+  });
+
+  describe( "methods", function() {
+    
+    var noopMonitor;
+
+    beforeEach(function(){
+      noopMonitor = monitor( noop );
+    });
+
+    describe( ".calledWith()", function() {
+      it( "checks if the monitor has been called with a given argument", function() {
+        noopMonitor( 10, 20 );
+        ( noopMonitor.calledWith( 10 ) ).should.equal( true );
+        ( noopMonitor.calledWith( 20 ) ).should.equal( true );
+        ( noopMonitor.calledWith( 30 ) ).should.equal( false );
+      });
+    });
+
+    describe( ".calledWithArgs()", function() {
+      it( "checks if the monitor has been called with a given set of arguments at one time, without regard to order or completeness.", function() {
+        noopMonitor( 10, 20, 30 );
+        ( noopMonitor.calledWithArgs([ 20, 10 ]) ).should.equal( true );
+      });
+    });
+
+    describe( ".calledWithExactArgs()", function() {
+      it( "checks if the monitor has been called with an exact set of arguments", function() {
+        noopMonitor( 10, 20, 30 );
+        ( noopMonitor.calledWithExactArgs([ 10, 20, 30 ]) ).should.equal( true );
+        ( noopMonitor.calledWithExactArgs([ 10, 20 ]) ).should.equal( false );
+        ( noopMonitor.calledWithExactArgs([ 10 ]) ).should.equal( false );
+        ( noopMonitor.calledWithExactArgs([ 30, 20, 10 ]) ).should.equal( false );
       });
     });
 
