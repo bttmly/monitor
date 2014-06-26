@@ -82,7 +82,7 @@ var monitor = (function(){
     if ( arguments.length === 0 ) {
       fn = function () {};
     } else if ( arguments.length === 1 ) {
-      void 0; // placeholder for now.
+      void 0; // placeholder for now. Do we need anything here?
     } else {
       obj = arguments[0];
       method = arguments[1];
@@ -96,6 +96,7 @@ var monitor = (function(){
     var fnMonitor = function() {
       var error, returnValue, time;
 
+      // invoke the function in try/catch
       try {
         time = now();
         returnValue = fn.apply( this, arguments );
@@ -104,6 +105,7 @@ var monitor = (function(){
         error = e;
       }
 
+      // add the call info to the calls array
       fnMonitor.calls.push({
         args: slice( arguments ),
         argsStringified: JSON.stringify( slice( arguments ) ),
@@ -114,20 +116,29 @@ var monitor = (function(){
         nth: fnMonitor.callCount,
         error: null || error
       });
+
+      // update instance props
       fnMonitor.callCount += 1;
       fnMonitor.lastReturn = returnValue;
-
       return returnValue;
     };
 
+    // mixin the methods
+    mixin( fnMonitor, methods );
+
+    // set instance properties
     fnMonitor.lastReturn = null;
     fnMonitor.callCount = 0;
     fnMonitor.calls = [];
 
-    mixin( fnMonitor, methods );
-
+    // if monitoring an object's method...
+    // attach fnMethod to the object,
+    // and add the restore method
     if ( obj && method ) {
       obj[method] = fnMonitor;
+      fnMonitor.restore = function() {
+        obj[method] = fn;
+      };
     }
 
     return fnMonitor;

@@ -2,6 +2,7 @@
   "use strict";
 
   var err = new Error();
+  var should = chai.should()
 
   function add( a, b ) {
     if ( arguments.length > 2 ) {
@@ -21,11 +22,11 @@
       method: function() {}
     };
 
-    it( "exists", function(){
+    it( "exists", function() {
       expect( monitor ).to.be.a( "function" );
     });
 
-    it( "can take a function as it's argument", function(){
+    it( "can take a function as it's argument", function() {
       expect(function() {
         monitor( noop );
       }).to.not.throw();
@@ -50,9 +51,10 @@
 
 
   // instance methods
-  describe( "properties", function() {
+  describe( "wrapping a standalone function", function() {
     var addMonitor;
     var ctx = {};
+    
     beforeEach(function(){
       addMonitor = monitor( add );
     });
@@ -138,5 +140,50 @@
     });
 
   });
+
+  describe( "wrapping an object method", function() {
+
+    var person;
+    var original;
+    var monitoredGet;
+
+    beforeEach( function() {
+      person = {
+        age: 30,
+        gender: "male",
+        name: "John Doe",
+        job: "BART Operator",
+        get: function( prop ) {
+          return this[prop];
+        }
+      };
+      original = person.get;
+      monitoredGet = monitor( person, "get" );
+    });
+
+    it( "replaces the target method on the object", function() {
+      expect( person.get ).to.equal( monitoredGet );
+      expect( person.get ).to.not.equal( original );
+    });
+
+    it( "is executed in the correct context", function() {
+      ( person.get( "age" ) ).should.equal( 30 );
+      ( person.get.calls[0].context ).should.equal( person );
+      should.not.exist( monitoredGet( "age" ) );
+    });
+
+    it( "re-attaches the original function with .restore()", function() {
+      ( person.get ).should.equal( monitoredGet );
+      person.get.restore();
+      ( person.get ).should.equal( original );
+    });
+
+
+
+
+
+  });
+
+
 
 })( monitor, describe, expect, it );
