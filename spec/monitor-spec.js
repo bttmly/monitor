@@ -136,6 +136,8 @@
 
     });
 
+
+
     describe( ".callCount", function() {
       var addMonitor;
       var ctx = {};
@@ -150,7 +152,18 @@
         addMonitor( 20, 40 );
         ( addMonitor.callCount ).should.equal( 2 );
       });
+    });
 
+    describe( ".called", function() {
+      var noopMonitor = monitor( noop );
+      it( "is false if a monitor has never been called", function() {
+        ( noopMonitor.called ).should.equal( false );
+      });
+
+      it( "is true if a monitor has been called at least once", function() {
+        noopMonitor();
+        ( noopMonitor.called ).should.equal( true );
+      });
     });
 
     describe( ".lastReturn", function(){

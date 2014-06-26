@@ -61,6 +61,7 @@ var monitor = (function(){
       this.lastReturn = null;
       this.callCount = 0;
       this.calls = [];
+      this.called = false;
     },
 
     returned: function( obj ) {
@@ -139,6 +140,7 @@ var monitor = (function(){
       });
 
       // update instance props
+      fnMonitor.called = true;
       fnMonitor.callCount += 1;
       fnMonitor.lastReturn = returnValue;
       return returnValue;
@@ -148,6 +150,7 @@ var monitor = (function(){
     mixin( fnMonitor, methods );
 
     // set instance properties
+    fnMonitor.called = false;
     fnMonitor.lastReturn = null;
     fnMonitor.callCount = 0;
     fnMonitor.calls = [];
